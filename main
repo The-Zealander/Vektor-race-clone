@@ -1,3 +1,11 @@
+// Get the canvas element
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Set the canvas dimensions
+canvas.width = 800;
+canvas.height = 600;
+
 // Define the player car
 class Car {
   constructor(x, y) {
@@ -29,46 +37,60 @@ class Car {
     this.position.y += this.velocity.y;
   }
 
-  display() {
-    fill(255, 0, 0); // Red color
-    rect(this.position.x, this.position.y, 50, 50);
+  draw() {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(this.position.x, this.position.y, 50, 50);
   }
 }
 
 // Create a new car instance
-let car;
+const car = new Car(100, 100);
 
-function setup() {
-  createCanvas(800, 600);
-  car = new Car(100, 100);
-}
+// Handle keyboard input
+document.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'w':
+      car.acceleration.y = -0.1;
+      break;
+    case 'ArrowDown':
+    case 's':
+      car.acceleration.y = 0.1;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+      car.acceleration.x = -0.1;
+      break;
+    case 'ArrowRight':
+    case 'd':
+      car.acceleration.x = 0.1;
+      break;
+  }
+});
 
-function draw() {
-  background(220); // Light gray background
+document.addEventListener('keyup', (e) => {
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'ArrowDown':
+    case 's':
+      car.acceleration.y = 0;
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'ArrowRight':
+    case 'd':
+      car.acceleration.x = 0;
+      break;
+  }
+});
+
+// Main game loop
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   car.update();
-  car.display();
+  car.draw();
+  requestAnimationFrame(update);
 }
 
-function keyPressed() {
-  if (keyCode === UP_ARROW || key === 'w') {
-    car.acceleration.y = -0.1;
-  }
-  if (keyCode === DOWN_ARROW || key === 's') {
-    car.acceleration.y = 0.1;
-  }
-  if (keyCode === LEFT_ARROW || key === 'a') {
-    car.acceleration.x = -0.1;
-  }
-  if (keyCode === RIGHT_ARROW || key === 'd') {
-    car.acceleration.x = 0.1;
-  }
-}
-
-function keyReleased() {
-  if (keyCode === UP_ARROW || key === 'w' || keyCode === DOWN_ARROW || key === 's') {
-    car.acceleration.y = 0;
-  }
-  if (keyCode === LEFT_ARROW || key === 'a' || keyCode === RIGHT_ARROW || key === 'd') {
-    car.acceleration.x = 0;
-  }
-}
+update();
