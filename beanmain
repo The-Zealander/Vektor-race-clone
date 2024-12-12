@@ -1,0 +1,92 @@
+-- initialize variables
+player_x = 64
+player_y = 64
+player_angle = 0
+player_speed = 0
+max_speed = 1
+acceleration = 0.1
+camera_x = 0
+camera_y = 0
+
+-- game loop
+function _update60()
+  -- accelerate
+  if btn(⬇️) then
+    player_speed -= acceleration
+  elseif btn(⬆️) then
+    player_speed += acceleration
+  elseif btn(❎) then
+  	if player_speed<0 then
+  	 player_speed+=0.1
+  	elseif player_speed>0 then
+  	 player_speed-=0.05
+  	end
+  end
+
+  -- limit speed
+  if player_speed < -max_speed then
+    player_speed = -max_speed
+  elseif player_speed > max_speed then
+    player_speed = max_speed
+  end
+
+  -- turn
+  if btn(⬅️) then
+    player_angle -= 0.01*player_speed
+  elseif btn(➡️) then
+    player_angle += 0.01*player_speed
+  end
+
+  -- move player
+  local new_x = player_x + player_speed * cos(player_angle)
+  local new_y = player_y - player_speed * sin(player_angle)
+
+  -- check collision with track sides
+  local collision = false
+  for y = 0, 15 do
+    for x = 0, 15 do
+      local tile = mget(x, y)
+      if tile == 1 then
+        local tile_x = x * 8
+        local tile_y = y * 8
+        if rect_collision(new_x, new_y, 8, 8, tile_x, tile_y, 8, 8) then
+          collision = true
+        end
+      end
+    end
+  end
+
+  -- update player position if no collision
+  if not collision then
+    player_x = new_x
+    player_y = new_y
+  end
+
+  -- update camera position
+  camera_x = player_x - 64
+  camera_y = player_y - 64
+end
+
+-- draw function
+function _draw()
+  cls()
+  -- draw map
+  map(camera_x / 8, camera_y / 8, 0, 0, 16, 16)
+
+  -- draw player
+  spr(1, player_x - camera_x, player_y - camera_y, 1, 1, false, false, 2)
+
+  -- draw direction line
+  local end_x = player_x - camera_x + 16 * cos(player_angle)
+  local end_y = player_y - camera_y - 16 * sin(player_angle)
+  line(player_x - camera_x, player_y - camera_y, end_x, end_y, 12)
+end
+
+-- rect collision function
+function rect_collision(x1, y1, w1, h1, x2, y2, w2, h2)
+  if x1 + w1 > x2 and x1 < x2 + w2 and y1 + h1 > y2 and y1 < y2 + h2 then
+    return true
+  else
+    return false
+  end
+end
