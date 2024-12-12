@@ -1,0 +1,74 @@
+// Define the player car
+class Car {
+  constructor(x, y) {
+    this.position = { x, y };
+    this.velocity = { x: 0, y: 0 };
+    this.acceleration = { x: 0, y: 0 };
+    this.friction = 0.98; // Friction coefficient
+    this.maxSpeed = 5; // Maximum speed
+  }
+
+  update() {
+    // Update velocity based on acceleration
+    this.velocity.x += this.acceleration.x;
+    this.velocity.y += this.acceleration.y;
+
+    // Apply friction
+    this.velocity.x *= this.friction;
+    this.velocity.y *= this.friction;
+
+    // Limit speed
+    const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+    if (speed > this.maxSpeed) {
+      this.velocity.x = (this.velocity.x / speed) * this.maxSpeed;
+      this.velocity.y = (this.velocity.y / speed) * this.maxSpeed;
+    }
+
+    // Update position based on velocity
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+  }
+
+  display() {
+    fill(255, 0, 0); // Red color
+    rect(this.position.x, this.position.y, 50, 50);
+  }
+}
+
+// Create a new car instance
+let car;
+
+function setup() {
+  createCanvas(800, 600);
+  car = new Car(100, 100);
+}
+
+function draw() {
+  background(220); // Light gray background
+  car.update();
+  car.display();
+}
+
+function keyPressed() {
+  if (keyCode === UP_ARROW || key === 'w') {
+    car.acceleration.y = -0.1;
+  }
+  if (keyCode === DOWN_ARROW || key === 's') {
+    car.acceleration.y = 0.1;
+  }
+  if (keyCode === LEFT_ARROW || key === 'a') {
+    car.acceleration.x = -0.1;
+  }
+  if (keyCode === RIGHT_ARROW || key === 'd') {
+    car.acceleration.x = 0.1;
+  }
+}
+
+function keyReleased() {
+  if (keyCode === UP_ARROW || key === 'w' || keyCode === DOWN_ARROW || key === 's') {
+    car.acceleration.y = 0;
+  }
+  if (keyCode === LEFT_ARROW || key === 'a' || keyCode === RIGHT_ARROW || key === 'd') {
+    car.acceleration.x = 0;
+  }
+}
