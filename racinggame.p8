@@ -134,22 +134,20 @@ end
 player = {
   x = 0,
   y = 0,
-  dx = 0, -- horizontal velocity
-  dy = 0, -- vertical velocity
+  speed = 0, -- current speed
   max_kph = 300, -- max speed in kph
   max_speed = 10, -- max speed in game units
   accel_kph = 10, -- acceleration in kph per second
   decel_kph = 5, -- deceleration in kph per second
   friction = 0.95, -- friction factor for natural slowdown
-  direction = "down", -- initial direction
+  angle = 0, -- angle in degrees
 }
 
 function init_player()
   player.x = 16
   player.y = 16
-  player.dx = 0
-  player.dy = 0
-  player.direction = "down"
+  player.speed = 0
+  player.angle = 0 -- facing right initially
 end
 
 -- new function: check if the player touches a tile with flag 7
@@ -180,28 +178,27 @@ function update_player()
   local accel = player.accel_kph / 170
   local decel = player.decel_kph / 170
 
-  -- acceleration logic for velocity vector
+  -- handle turning
   if btn(⬅️) then
-    player.dx = max(player.dx - accel, -max_game_speed)
-    player.direction = "left"
+    player.angle = (player.angle + 2) % 360 -- turn right
   elseif btn(➡️) then
-    player.dx = min(player.dx + accel, max_game_speed)
-    player.direction = "right"
-  else
-    -- decelerate horizontally
-    player.dx *= player.friction
+    player.angle = (player.angle - 2) % 360 -- turn left
   end
 
-  if btn(⬆️) then
-    player.dy = max(player.dy - accel, -max_game_speed)
-    player.direction = "up"
-  elseif btn(⬇️) then
-    player.dy = min(player.dy + accel, max_game_speed)
-    player.direction = "down"
+  -- handle acceleration
+  if btn(❎) then
+    player.speed = min(player.speed + accel, max_game_speed)
+  elseif btn(🅾️) then
+    player.speed = max(player.speed - decel, 0)
   else
-    -- decelerate vertically
-    player.dy *= player.friction
+    -- apply friction when not accelerating
+    player.speed *= player.friction
   end
+
+  -- calculate velocity based on angle and speed
+  local rad_angle = player.angle * (3.14 / 180) -- convert degrees to radians
+  player.dx = player.speed * cos(rad_angle)
+  player.dy = player.speed * sin(rad_angle)
 
   -- update position based on velocity
   local new_x = player.x + player.dx
@@ -221,17 +218,18 @@ end
 
 function draw_player()
   -- draw the player sprite based on direction
-  if player.direction == "up" then
-    spr(1, player.x, player.y)
-  elseif player.direction == "down" then
-    spr(3, player.x, player.y)
-  elseif player.direction == "left" then
-    spr(2, player.x, player.y)
-  elseif player.direction == "right" then
-    spr(4, player.x, player.y)
+  local sprite_index = 1 -- default sprite index
+  if player.angle >= 315 or player.angle < 45 then
+    sprite_index = 4 -- facing right
+  elseif player.angle >= 45 and player.angle < 135 then
+    sprite_index = 3 -- facing down
+  elseif player.angle >= 135 and player.angle < 225 then
+    sprite_index = 2 -- facing left
+  elseif player.angle >= 225 and player.angle < 315 then
+    sprite_index = 1 -- facing up
   end
+  spr(sprite_index, player.x, player.y)
 end
-
 -->8
 -- ui/speedometer
 
