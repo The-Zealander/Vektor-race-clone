@@ -141,13 +141,38 @@ player = {
   decel_kph = 5, -- deceleration in kph per second
   friction = 0.95, -- friction factor for natural slowdown
   angle = 0, -- angle in degrees
+  sprite = 1, -- initial sprite
 }
 
 function init_player()
   player.x = 16
   player.y = 16
   player.speed = 0
-  player.angle = 0 -- facing right initially
+  player.angle = 0 
+  player.sprite = 1 -- facing right initially
+end
+
+function rotation()
+  -- normalize the angle to be within 0 to 360 degrees
+  player.angle = player.angle % 360
+
+  if player.angle >= 337.5 or player.angle < 22.5 then
+    player.sprite = 1 -- facing right
+  elseif player.angle >= 22.5 and player.angle < 67.5 then
+    player.sprite = 2 -- facing up-right
+  elseif player.angle >= 67.5 and player.angle < 112.5 then
+    player.sprite = 3 -- facing up
+  elseif player.angle >= 112.5 and player.angle < 157.5 then
+    player.sprite = 4 -- facing up-left
+  elseif player.angle >= 157.5 and player.angle < 202.5 then
+    player.sprite = 5 -- facing left
+  elseif player.angle >= 202.5 and player.angle < 247.5 then
+    player.sprite = 6 -- facing down-left
+  elseif player.angle >= 247.5 and player.angle < 292.5 then
+    player.sprite = 7 -- facing down
+  elseif player.angle >= 292.5 and player.angle < 337.5 then
+    player.sprite = 8 -- facing down-right
+  end
 end
 
 -- new function: check if the player touches a tile with flag 7
@@ -180,9 +205,9 @@ function update_player()
 
   -- handle turning
   if btn(⬅️) then
-    player.angle = (player.angle + 2) % 360 -- turn right
+    player.angle = (player.angle + 1) % 360 -- turn right
   elseif btn(➡️) then
-    player.angle = (player.angle - 2) % 360 -- turn left
+    player.angle = (player.angle - 1) % 360 -- turn left
   end
 
   -- handle acceleration
@@ -196,9 +221,8 @@ function update_player()
   end
 
   -- calculate velocity based on angle and speed
-  local rad_angle = player.angle * (3.14 / 180) -- convert degrees to radians
-  player.dx = player.speed * cos(rad_angle)
-  player.dy = player.speed * sin(rad_angle)
+  player.dx = player.speed * cos(player.angle/57.3)
+  player.dy = player.speed * sin(player.angle/57.3)
 
   -- update position based on velocity
   local new_x = player.x + player.dx
@@ -212,23 +236,16 @@ function update_player()
     player.y = new_y
   end
   
-  -- new: check if player touches a tile with flag 7
+  -- check if player touches a tile with flag 7
   check_restart()
+  
+  -- update the sprite based on the current angle
+  rotation()
 end
 
 function draw_player()
   -- draw the player sprite based on direction
-  local sprite_index = 1 -- default sprite index
-  if player.angle >= 315 or player.angle < 45 then
-    sprite_index = 4 -- facing right
-  elseif player.angle >= 45 and player.angle < 135 then
-    sprite_index = 3 -- facing down
-  elseif player.angle >= 135 and player.angle < 225 then
-    sprite_index = 2 -- facing left
-  elseif player.angle >= 225 and player.angle < 315 then
-    sprite_index = 1 -- facing up
-  end
-  spr(sprite_index, player.x, player.y)
+  spr(player.sprite, player.x, player.y)
 end
 -->8
 -- ui/speedometer
@@ -276,14 +293,14 @@ function draw_speedometer(x, y, radius)
 end
 
 __gfx__
-0000000000088000000000000580085000000000001111000011110000111100001161000a161100000099000000000000a0a000000000000099900777777777
-000000000d8888d00d5000d50d8888d05d0005d00111111001111110011116100111661001a16110000a89a00a99aaa00a00a000000000000955596077777777
-00700700058888500888888800855800888888801111111111111111111116111111166119166611000988909988990a0a900000000000000499940777777777
-0007700000877800888765800086680008567888f79ff97ff79ff97ff798897ff798ff66f786f66f00099890988990000a99a000aa0a99a00444446077777777
-0007700000866800888765800087780008567888fffffffffffffff88ff8fff88ff8fff6fff6af96000a99a00a99a0aa09899000000998890494440077777777
-0070070000855800088888880588885088888880ff5ff5fffffffff88f5555f888f8ff8f8f66fa9a000009a00000000009889000a09988994444490777777777
-000000000d8888d00d5000d50d8888d05d0005d00f5555f00f5555f00f5ff5f0085855808f6f9880000a00a0000000000a98a0000aaa99a09449967077777777
-000000000580085000000000000880000000000000ffff0000ffff0000ffff0000f8f880866f8900000a0a000000000000990000000000000996700077777777
+000000000008800000005d880000000000050000058008500000500000000000885000000a161100000099000000000000a0a000000000000099900777777777
+000000000d8888d0000888885d0005d0000850000d8888d0000588000d5000d58785000001a16110000a89a00a99aaa00a00a000000000000955596077777777
+00700700058888500d88778d88888880008888000085580000888880088888885878800019166611000988909988990a0a900000000000000499940777777777
+000770000087780058856785085678885888588000866800058588858887658005866d00f786f66f00099890988990000a99a000aa0a99a00444446077777777
+000770000086680088885800085678880585678500877800d876585088876580008868d0fff6af96000a99a00a99a0aa09899000000998890494440077777777
+007007000085580000888800888888800088778d058888508887880008888888000d85008f66fa9a000009a00000000009889000a09988994444490777777777
+000000000d8888d0a9088d005d0005d0000888880d8888d0888850000d5000d50000d0008f6f9880000a00a0000000000a98a0000aaa99a09449967077777777
+0000000005800850990850000000000000005d8800088000088d00000000000000000000866f8900000a0a000000000000990000000000000996700077777777
 55555555555555550000005555000000555555555555555555555555555555555555555555555555555000000000000000000000000005555555555555555555
 55555555555555550005555555550000555555555555555555555555555555555555555995555555555555000000000000000000005555555555555555555555
 55555555555775550055555555555500555555555555555555555555555555555555555995555555555555550000000000000000555555555555555555555555
