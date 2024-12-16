@@ -141,7 +141,7 @@ player = {
   decel_kph = 5, -- deceleration in kph per second
   friction = 0.95, -- friction factor for natural slowdown
   angle = 0, -- angle in degrees
-  sprite = 1, -- initial sprite
+  sprite = 5, -- initial sprite
 }
 
 function init_player()
@@ -149,13 +149,17 @@ function init_player()
   player.y = 16
   player.speed = 0
   player.angle = 0 
-  player.sprite = 1 -- facing right initially
+  player.sprite = 5 -- facing right initially
 end
 
 function rotation()
   -- normalize the angle to be within 0 to 360 degrees
-  player.angle = player.angle % 360
-
+ if player.angle > 360 then
+  player.angle = player.angle-360
+ end
+ if player.angle < 0 then
+  player.angle = player.angle+360
+ end
   if player.angle >= 337.5 or player.angle < 22.5 then
     player.sprite = 1 -- facing right
   elseif player.angle >= 22.5 and player.angle < 67.5 then
@@ -205,11 +209,11 @@ function update_player()
 
   -- handle turning
   if btn(⬅️) then
-    player.angle = (player.angle + 1) % 360 -- turn right
+    player.angle = (player.angle - 1) % 360 -- turn right
   elseif btn(➡️) then
-    player.angle = (player.angle - 1) % 360 -- turn left
+    player.angle = (player.angle + 1) % 360 -- turn left
   end
-
+ 
   -- handle acceleration
   if btn(❎) then
     player.speed = min(player.speed + accel, max_game_speed)
@@ -244,6 +248,7 @@ function update_player()
 end
 
 function draw_player()
+ print(player.angle,10,10,7)
   -- draw the player sprite based on direction
   spr(player.sprite, player.x, player.y)
 end
