@@ -59,11 +59,11 @@ end
 --game_screen
 
 function init_game_screen()
- init_baur()
+ init_player()
  level_width = 1024
  level_height = 512
- cam_x=0
- cam_y=0
+ cam_x=64
+ cam_y=64
 end
 
 function is_wall_tile(x, y)
@@ -90,8 +90,8 @@ end
 
 function update_game_screen()
  --simple cam
- cam_x=baur.x-64+4
- cam_y=baur.y-64+4
+ cam_x=player.x-64+4
+ cam_y=player.y-64+4
  if cam_x<0 then
   cam_x=0
  end
@@ -105,7 +105,7 @@ function update_game_screen()
   cam_y=512-128
  end
  camera(cam_x,cam_y)
- update_baur()
+ update_player()
 end
 
 -- function to draw the ui
@@ -125,150 +125,134 @@ end
 function draw_game_screen()
  cls(0)
  map()
- draw_baur()
- draw_ui()
- for f in all(firebolts) do
-  draw_firebolt (f)
- end
- for e in all(enemies) do
-  draw_enemy(e)
- end
+ draw_player()
+ draw_speedometer(18+cam_x, 126+cam_y, 20)
  draw_iui()
 end
 -->8
---baur/player
+-- player/player
 
-baur = {
+player = {
  x = 60,
  y = 60,
- speed = 1,
- walk = 1,
- sprint = 2,
- direction = "right",
- hp = 5,
- max_stamina = 10,
- stamina = 10,
- stamina_regen = 5 / 30,
- stamina_loss = 10 / 30,
- firebolt_timer = 0,
+ dx = 0, -- horizontal velocity
+ dy = 0, -- vertical velocity
+ max_kph = 170, -- max speed in kph
+ max_speed = 1.5, -- max speed in game units
+ accel_kph = 10, -- acceleration in kph per second
+ decel_kph = 5, -- deceleration in kph per second
+ friction = 0.98, -- friction factor for natural slowdown
+ direction = "down", -- initial direction
 }
 
-function init_baur()
- baur.x = 16
- baur.y = 16
- baur.speed = baur.walk
- baur.stamina = baur.max_stamina
+function init_player()
+ player.x = 16
+ player.y = 16
+ player.dx = 0
+ player.dy = 0
+ player.direction = "down"
 end
 
-function update_baur()
- local new_x, new_y = baur.x, baur.y
+function update_player()
+ -- convert max speed in kph to game units
+ local max_game_speed = player.max_kph / 170 -- scale factor
+ local accel = player.accel_kph / 170
+ local decel = player.decel_kph / 170
+
+ -- acceleration logic for velocity vector
  if btn(⬅️) then
-  new_x -= baur.speed
-  baur.direction = "left"
- end
- if btn(➡️) then
-  new_x += baur.speed
-  baur.direction = "right"
- end
- if not is_wall_tile_area(new_x, baur.y) then
-  baur.x = new_x
- end
- if btn(⬆️) then
-  new_y -= baur.speed
-  baur.direction = "up"
- end
- if btn(⬇️) then
-  new_y += baur.speed
-  baur.direction = "down"
- end
- if not is_wall_tile_area(baur.x, new_y) then
-  baur.y = new_y
- end
- if btn(🅾️) then
-  if baur.stamina > 4 then
-   baur.speed = baur.sprint
-   baur.stamina -= baur.stamina_loss
-   if baur.stamina < 0 then
-    baur.stamina = 0
-   end
-  elseif baur.stamina > 0 then
-   baur.stamina -= baur.stamina_loss
-   if baur.stamina < 0 then
-    baur.stamina = 0
-    baur.speed = baur.walk
-   end
-  end
+  player.dx = max(player.dx - accel, -max_game_speed)
+  player.direction = "left"
+ elseif btn(➡️) then
+  player.dx = min(player.dx + accel, max_game_speed)
+  player.direction = "right"
  else
-  baur.speed = baur.walk
+  -- decelerate horizontally
+  player.dx *= player.friction
  end
- if baur.speed == baur.walk then
-  if baur.stamina <= 10 then
-   baur.stamina += baur.stamina_regen
-   if baur.stamina > baur.max_stamina then
-    baur.stamina = baur.max_stamina
-   end
-  elseif baur.stamina > 0 then
-   baur.stamina += baur.stamina_regen
-   if baur.stamina > baur.max_stamina then
-    baur.stamina = baur.max_stamina
-   end
-  end
+
+ if btn(⬆️) then
+  player.dy = max(player.dy - accel, -max_game_speed)
+  player.direction = "up"
+ elseif btn(⬇️) then
+  player.dy = min(player.dy + accel, max_game_speed)
+  player.direction = "down"
+ else
+  -- decelerate vertically
+  player.dy *= player.friction
+ end
+
+ -- update position based on velocity
+ local new_x = player.x + player.dx
+ local new_y = player.y + player.dy
+
+ -- prevent movement into walls
+ if not is_wall_tile_area(new_x, player.y) then
+  player.x = new_x
+ end
+ if not is_wall_tile_area(player.x, new_y) then
+  player.y = new_y
  end
 end
 
-function draw_baur()
-
- if baur.direction == "up" then
-  spr(1, baur.x, baur.y)
- elseif baur.direction == "down" then
-  spr(3, baur.x, baur.y)
- elseif baur.direction == "left" then
-  spr(2, baur.x, baur.y)
- elseif baur.direction == "right" then
-  spr(4, baur.x, baur.y)
+function draw_player()
+ -- draw the player sprite based on direction
+ if player.direction == "up" then
+  spr(1, player.x, player.y)
+ elseif player.direction == "down" then
+  spr(3, player.x, player.y)
+ elseif player.direction == "left" then
+  spr(2, player.x, player.y)
+ elseif player.direction == "right" then
+  spr(4, player.x, player.y)
  end
 end
+
 -->8
---ui
+-- ui/speedometer
 
-function init_ui()
-	
-end
+function draw_speedometer(x, y, radius)
+ -- draw the outer circle of the speedometer
+ circfill(x, y, radius, 5) -- background
+ circ(x, y, radius, 7) -- border
 
-function update_ui()
-	
-end
+ -- calculate player speed magnitude in game units
+ local speed_game_units = sqrt(player.dx^2 + player.dy^2)
 
-function draw_ui()
---ui box
-	rectfill(0+cam_x,112+cam_y,127+cam_x,127+cam_y,6)
-	rect(0+cam_x,112+cam_y,127+cam_x,127+cam_y,5)
-	rect(56+cam_x,112+cam_y,72+cam_x,127+cam_y,5)
---hp icon
- if baur.hp == 5 then
-  spr(5, 60+cam_x, 116+cam_y)
- elseif baur.hp == 4 then
-  spr(6, 60+cam_x, 116+cam_y)
- elseif baur.hp == 3 then
-  spr(7, 60+cam_y, 116+cam_y)
- elseif baur.hp == 2 then
-  spr(8, 60+cam_x, 116+cam_y)
- elseif baur.hp == 1 then
-  spr(9, 60+cam_x, 116+cam_y)
- elseif baur.hp <= 0 then
+ -- convert speed to kph
+ local kph = speed_game_units * player.max_kph / player.max_speed
+
+ -- ensure speed doesn't exceed the max kph
+ kph = mid(0, kph, player.max_kph)
+
+ -- normalize speed for needle position (0 to 1)
+ local normalized_speed = kph / player.max_kph
+
+ -- angle for the needle (from -90るぬ to +90るぬ or -エ█/2 to +エ█/2 radians)
+ local angle = normalized_speed * (pi / 2) - (pi / 2)
+
+ -- calculate needle position
+ local needle_x = x + cos(angle) * (radius - 4)
+ local needle_y = y + sin(angle) * (radius - 4)
+
+ -- draw the needle
+ line(x, y, needle_x, needle_y, 8)
+
+ -- draw tick marks for speedometer
+ for i = 0, 10 do
+  local tick_angle = i * (pi / 10) - (pi / 2)
+  local tick_x1 = x + cos(tick_angle) * (radius - 2)
+  local tick_y1 = y + sin(tick_angle) * (radius - 2)
+  local tick_x2 = x + cos(tick_angle) * (radius - 6)
+  local tick_y2 = y + sin(tick_angle) * (radius - 6)
+  line(tick_x1, tick_y1, tick_x2, tick_y2, 7)
  end
---stamia bar
- rect(2+cam_x,114+cam_y,24+cam_x,120+cam_y)
- spr(14,26+cam_x,114+cam_y)
- stam = flr(baur.stamina)
- stams=3+stam*2
- if stam >= 7 then
-  rectfill(3+cam_x,115+cam_y,stams+cam_x,119+cam_y,(12))
- elseif stam >= 4 then
-  rectfill(3+cam_x,115+cam_y,stams+cam_x,119+cam_y,(9))
- else rectfill(3+cam_x,115+cam_y,stams+cam_x,119+cam_y,(8))
- end
+
+ -- display the numerical speed value
+ print("speed:", x - 15, y - radius - 10, 7)
+ print(flr(kph).." kph", x - 10, y - radius + 2, 7)
 end
+
 __gfx__
 0000000000088000000000000580085000000000001111000011110000111100001161000a161100000099000000000000a0a000000000000099900777777777
 000000000d8888d00d5000d50d8888d05d0005d00111111001111110011116100111661001a16110000a89a00a99aaa00a00a000000000000955596077777777
